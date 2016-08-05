@@ -15,6 +15,6 @@ router.get('/game/:gameID')
 
 //This is where you can post your move
 //POST -> {} -> {gamestate: [columns][rows], success: true || false} will only return false if it wasn't your go, or the game is closed
-router.post('/game/:token/:column/:row')
+router.post('/game/:gameID/:column/:row')
 
 module.exports = router;
