@@ -19,6 +19,7 @@ router.post('/lobby', function (req, res){
     if(!user) {
       User.create({name: req.body.name, token: uuid.v4()}, function(err, user){
         if(err) return res.status(400).send(err);
+        user.token = user._id
         res.send(user);
       })
     } else {
@@ -77,7 +78,7 @@ router.post('/game/:gameID/:column/:row', function(req, res){
   }, function(err, game){
     if(err) return res.status(400).send(err);
     if(!game) return res.status(400).send({message: 'No game'})
-    if(game.currentPlayer !== req.body.token) {
+    if(game.currentPlayer.toString() !== req.body.token.toString()) {
       return res.status(400).send({message: 'It is not your turn...'})
     }
     try {
@@ -85,7 +86,7 @@ router.post('/game/:gameID/:column/:row', function(req, res){
         return res.status(400).send({message: 'That position is already taken, are you trying to mess with me?'})
       }
       game.gameState[parseInt(req.params.column)][parseInt(req.params.row)] = req.body.token
-      Game.update({_id: req.params.gameID}, {gameState: game.gameState, currentPlayer: game.currentPlayer === game.p1 ? game.p2 : game.p1}, function(err, result){
+      Game.update({_id: req.params.gameID}, {gameState: game.gameState, currentPlayer: game.currentPlayer.toString() === game.p1.toString() ? game.p2 : game.p1}, function(err, result){
         if(err) return res.status(400).send(err);
         return res.send(game);
       })
