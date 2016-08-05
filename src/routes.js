@@ -41,13 +41,16 @@ router.get('/lobby/:token', function(req, res) {
       $or: [{p1: user._id}, {p2: user._id}],
       status: 'playing'
     }, function(err, existingGame) {
+      console.log(err, existingGame);
       if(err) return res.status(400).send(err);
-      if(existingGame) return res.send(existingGame);
+      if(existingGame) return res.send({gameID: existingGame._id});
       //NEED TO MAKE A NEW GAME?
       User.findOne({token: {$ne: req.params.token}, lastseen: {$gt: moment().subtract(5, 'minutes')}, lobby: true}, function(err, result){
         if(err) return res.status(400).send(err);
         if(!result) return res.send({})
-        res.send(result);
+        Game.create({status: 'playing', p1: user._id, p2: result._id, currentPlayer: Math.random() > 0.5 ? user._id : result._id, gameState: [[undefined, undefined, undefined], [undefined, undefined, undefined], [undefined, undefined, undefined]]}, function(err, newGame) {
+          res.send({gameID: newGame._id})
+        })
       })
     })
   })
