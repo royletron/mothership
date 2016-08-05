@@ -6,7 +6,7 @@ var GameSchema = new Schema({
   p2: {type: Schema.Types.ObjectId, ref: 'User'},
   created: {type: Date, default: Date.now() },
   update: {type: Date, default: Date.now() },
-  gamestate: Object,
+  gameState: Schema.Types.Mixed,
   status: String,
   currentPlayer: {type: Schema.Types.ObjectId, ref: 'User'}
 })
