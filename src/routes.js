@@ -1,7 +1,9 @@
 var express = require('express');
+var moment = require('moment');
 var router = express.Router();
 var uuid = require('node-uuid');
 var User = require('./models/User');
+var Game = require('./models/Game');
 
 //This is where you should announce you are ready to play
 //POST -> {name: 'Darren'} -> {name: 'Darren', token: 'abc123'}
@@ -19,7 +21,7 @@ router.post('/lobby', function (req, res){
         res.send(user);
       })
     } else {
-      User.update({lastseen: Date.now()}, function(err, result) {
+      User.update({_id: user._id}, {lastseen: Date.now(), lobby: true}, function(err, result) {
         res.send(user);
       })
     }
@@ -28,7 +30,28 @@ router.post('/lobby', function (req, res){
 
 //This is where you poll waiting for a game
 //GET -> {} -> {} || {gameID: 'abc123'} in the second case the game is ready for you to go into
-router.get('/lobby/:token')
+router.get('/lobby/:token', function(req, res) {
+  User.findOne({
+    token: req.params.token
+  }, function(err, user) {
+    if(err) return res.status(400).send(err);
+    if(!user) return res.status(400).send({message: 'There was no user for that token... what are you upto?'})
+    //I NEED TO FIND A PLAYER, OR EXISTING GAME?
+    Game.findOne({
+      $or: [{p1: user._id}, {p2: user._id}],
+      status: 'playing'
+    }, function(err, existingGame) {
+      if(err) return res.status(400).send(err);
+      if(existingGame) return res.send(existingGame);
+      //NEED TO MAKE A NEW GAME?
+      User.findOne({token: {$ne: req.params.token}, lastseen: {$gt: moment().subtract(5, 'minutes')}, lobby: true}, function(err, result){
+        if(err) return res.status(400).send(err);
+        if(!result) return res.send({})
+        res.send(result);
+      })
+    })
+  })
+})
 
 //This is where you can poll the state of a game
 //GET -> {} -> {status: 'playing | finished', currentPlayer: 'PLAYER_TOKEN', gameState: [columns][rows]}

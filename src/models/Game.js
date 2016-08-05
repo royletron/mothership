@@ -8,6 +8,7 @@ var GameSchema = new Schema({
   update: {type: Date, default: Date.now() },
   gameState: Schema.Types.Mixed,
   status: String,
+  lobby: {type: Boolean, default: true},
   currentPlayer: {type: Schema.Types.ObjectId, ref: 'User'}
 })
 
