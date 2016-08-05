@@ -2,6 +2,7 @@ var express = require('express');
 var moment = require('moment');
 var router = express.Router();
 var uuid = require('node-uuid');
+var session = require('express-session')
 var User = require('./models/User');
 var Game = require('./models/Game');
 
@@ -58,10 +59,40 @@ router.get('/lobby/:token', function(req, res) {
 
 //This is where you can poll the state of a game
 //GET -> {} -> {status: 'playing | finished', currentPlayer: 'PLAYER_TOKEN', gameState: [columns][rows]}
-router.get('/game/:gameID')
+router.get('/game/:gameID', function(req, res){
+  Game.findOne({
+    _id: req.params.gameID
+  }, function(err, game) {
+    if(err) return res.status(400).send(err);
+    if(!game) return res.status(400).send({message: 'No game'})
+    res.send(game);
+  })
+})
 
 //This is where you can post your move
 //POST -> {} -> {gamestate: [columns][rows], success: true || false} will only return false if it wasn't your go, or the game is closed
-router.post('/game/:gameID/:column/:row')
+router.post('/game/:gameID/:column/:row', function(req, res){
+  Game.findOne({
+    _id: req.params.gameID
+  }, function(err, game){
+    if(err) return res.status(400).send(err);
+    if(!game) return res.status(400).send({message: 'No game'})
+    if(game.currentPlayer !== req.body.token) {
+      return res.status(400).send({message: 'It is not your turn...'})
+    }
+    try {
+      if(game.gameState[parseInt(req.params.column)][parseInt(req.params.row)] !== null) {
+        return res.status(400).send({message: 'That position is already taken, are you trying to mess with me?'})
+      }
+      game.gameState[parseInt(req.params.column)][parseInt(req.params.row)] = req.body.token
+      Game.update({_id: req.params.gameID}, {gameState: game.gameState, currentPlayer: game.currentPlayer === game.p1 ? game.p2 : game.p1}, function(err, result){
+        if(err) return res.status(400).send(err);
+        return res.send(game);
+      })
+    } catch(e) {
+      return res.status(400).send(err);
+    }
+  })
+})
 
 module.exports = router;
